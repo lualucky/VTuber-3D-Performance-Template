@@ -1,0 +1,15 @@
+UniVRM-0.130.1_c721
+https://github.com/vrm-c/UniVRM/releases/tag/v0.130.1
+
+Example Character VRM
+https://github.com/vrm-c/UniVRM/tree/master/Tests/Models/Alicia_vrm-0.51
+
+lilToon 2.3.2
+https://github.com/lilxyzw/lilToon/releases/tag/2.3.2
+
+StageLightManeuver 1.0.4
+https://github.com/murasaqi/Unity_StageLightManeuver/releases/tag/v1.0.4
+
+LEDScreenShader 0.1.1
+https://github.com/llcheesell/LEDScreenShader/releases/tag/v0.1.1
+
