@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using Unity.Cinemachine;
+using Unity.VisualScripting;
 
 namespace CinemachineTools
 {
@@ -62,6 +63,7 @@ namespace CinemachineTools
         #region Fields
 
         // Timeline references
+        private string timelineName;
         private PlayableDirector playableDirector;
         private TimelineAsset timelineAsset;
         private CinemachineTrack targetCinemachineTrack;
@@ -135,7 +137,7 @@ namespace CinemachineTools
         private Vector2 stageScrollPos;
         private Vector2 cameraCreatorScrollPos;
         private int selectedTab = 0;
-        private readonly string[] tabNames = { "Camera Creator", "Timeline", "Characters", "Character Groups", "Stage Cameras", "Audio", "Generate" };
+        private readonly string[] tabNames = { "1. Timeline", "2. Camera Creator", "3. Characters", "4. Character Groups", "5. Stage Cameras", "6. Audio", "7. Generate" };
 
         // Styles
         private GUIStyle headerStyle;
@@ -205,8 +207,8 @@ namespace CinemachineTools
 
             switch (selectedTab)
             {
-                case 0: DrawCameraCreatorTab(); break;
-                case 1: DrawTimelineTab(); break;
+                case 0: DrawTimelineTab(); break;
+                case 1: DrawCameraCreatorTab(); break;
                 case 2: DrawCharactersTab(); break;
                 case 3: DrawGroupsTab(); break;
                 case 4: DrawStageCamerasTab(); break;
@@ -266,19 +268,25 @@ namespace CinemachineTools
             }
 
             EditorGUILayout.Space(5);
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Custom Look Target (Optional)");
             customLookTarget = (Transform)EditorGUILayout.ObjectField(
-                new GUIContent("Custom Look Target (Optional)", "Override the automatic look target"),
                 customLookTarget,
                 typeof(Transform),
-                true
+                true,
+                GUILayout.MinWidth(120)
             );
+            GUILayout.EndHorizontal();
 
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Custom Follow Target (Optional)");
             customFollowTarget = (Transform)EditorGUILayout.ObjectField(
-                new GUIContent("Custom Follow Target (Optional)", "Override the automatic follow target"),
                 customFollowTarget,
                 typeof(Transform),
-                true
+                true,
+                GUILayout.MinWidth(120)
             );
+            GUILayout.EndHorizontal();
 
             EditorGUILayout.EndVertical();
 
@@ -894,11 +902,39 @@ namespace CinemachineTools
 
         #region Tab Drawing Methods
 
+        private void CreateTimeline(string timelineName)
+        {
+            string path = EditorUtility.SaveFilePanelInProject("Save " + timelineName + " Timeline", timelineName + " Timeline", "asset", "Location to save your name timeline.");
+            if(path.Length > 0)
+            {
+                GameObject obj = new GameObject(timelineName);
+                playableDirector = obj.AddComponent<PlayableDirector>();
+
+                timelineAsset = ScriptableObject.CreateInstance<TimelineAsset>();
+                AssetDatabase.CreateAsset(timelineAsset, path);
+
+                playableDirector.playableAsset = timelineAsset;
+
+                Selection.objects = new GameObject[] {obj};
+
+                // -- TODO lock timeline panel
+            }
+        }
+
         private void DrawTimelineTab()
         {
             EditorGUILayout.BeginVertical(sectionStyle);
             EditorGUILayout.LabelField("Timeline Setup", EditorStyles.boldLabel);
-            EditorGUILayout.Space(5);
+            EditorGUILayout.Space(15);
+
+            timelineName = EditorGUILayout.TextField("Timeline Name", timelineName);
+
+            if (GUILayout.Button("Create Timeline", GUILayout.Height(35)))
+            {
+                CreateTimeline(timelineName);
+            }
+
+            EditorGUILayout.Space(25);
 
             // Playable Director
             EditorGUI.BeginChangeCheck();
@@ -909,7 +945,7 @@ namespace CinemachineTools
                 true
             );
 
-            if (EditorGUI.EndChangeCheck() && playableDirector != null)
+            if (EditorGUI.EndChangeCheck())
             {
                 timelineAsset = playableDirector.playableAsset as TimelineAsset;
                 targetCinemachineTrack = null;
@@ -1640,6 +1676,17 @@ namespace CinemachineTools
             Undo.RecordObject(timelineAsset, "Create Cinemachine Track");
             var newTrack = timelineAsset.CreateTrack<CinemachineTrack>(null, "Cinemachine Track");
             targetCinemachineTrack = newTrack;
+
+            CinemachineBrain brain = FindAnyObjectByType<CinemachineBrain>();
+            if (brain == null)
+            {
+                Camera cam = Camera.main;
+                brain = cam.AddComponent<CinemachineBrain>();
+            }
+            if(brain != null)
+            {
+                playableDirector.SetGenericBinding(targetCinemachineTrack, brain);
+            }
 
             EditorUtility.SetDirty(timelineAsset);
             AssetDatabase.SaveAssets();
